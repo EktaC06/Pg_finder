@@ -1,4 +1,5 @@
 const User = require("../models/user.Model");
+const bcrypt = require("bcrypt");
 
 // login
 const userLogin = async (req, res) => {
@@ -15,14 +16,20 @@ const userLogin = async (req, res) => {
 const userRegister = async (req, res) => {
   try {
     const { FirstName, LastName, Email, Password } = req.body;
-    const userCollection = { FirstName, LastName, Email, Password };
+    const hashedPassword = await bcrypt.hash(Password, 10);
+    const userCollection = { FirstName:FirstName, LastName:LastName, Email:Email, Password:hashedPassword};
     const newUser = new User(userCollection);
     const response = await newUser.save();
-    response.status(200).json({ message: "User registered successfully" });
+    if (response) {
+      return res.status(200).send({
+        message: "User registered successfully",
+        success: true,
+        data: response,
+      });
+    }
   } catch (error) {
     console.log("user Register API error: ", error);
   }
 };
 
-
-module.exports =  { userLogin, userRegister };
+module.exports = { userLogin, userRegister };
