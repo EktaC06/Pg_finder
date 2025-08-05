@@ -15,9 +15,9 @@ const userLogin = async (req, res) => {
 // register
 const userRegister = async (req, res) => {
   try {
-    const { FirstName, LastName, Email, Password } = req.body;
+    const { FirstName, LastName, Email, PhoneNumber, Password } = req.body;
     const hashedPassword = await bcrypt.hash(Password, 10);
-    const userCollection = { FirstName:FirstName, LastName:LastName, Email:Email, Password:hashedPassword};
+    const userCollection = { FirstName:FirstName, LastName:LastName, Email:Email, PhoneNumber:PhoneNumber ,Password:hashedPassword};
     const newUser = new User(userCollection);
     const response = await newUser.save();
     if (response) {
