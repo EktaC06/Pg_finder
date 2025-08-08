@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from "../components/layouts/Navbar";
+import axios from 'axios';
 
 function Register() {
   const navigate = useNavigate();
@@ -82,24 +83,23 @@ function Register() {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // TODO: Replace with actual API call
-      console.log('Registration attempt:', formData);
-      
-      // Simulate successful registration
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify({
+      const response = await axios.post(`${import.meta.env.VITE_USER_URL}/register`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`,
-        userType: formData.userType
-      }));
-      
-      navigate('/');
+        phone: formData.phone,
+        password: formData.password
+      });
+      if (response.status === 200 && response.data.success) {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      setErrors({ general: 'Registration failed. Please try again.' });
+      if (error.response && error.response.data && error.response.data.message) {
+        setErrors({ general: error.response.data.message });
+      } else {
+        setErrors({ general: 'Registration failed. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
