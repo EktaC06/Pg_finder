@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from "../components/layouts/Navbar";
+import axios from 'axios';
 
 function Login() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ function Login() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email) {
+    if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
@@ -38,8 +39,6 @@ function Login() {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -56,23 +55,46 @@ function Login() {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // TODO: Replace with actual API call
-      console.log('Login attempt:', formData);
-      
-      // Simulate successful login
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify({
+      const response = await axios.post(`${import.meta.env.VITE_USER_URL}/login`, {
         email: formData.email,
-        name: 'User'
-      }));
+        password: formData.password
+      });
       
-      navigate('/');
+      if (response.status === 200 && response.data.success) {
+        // Store user data in localStorage for session management
+        localStorage.setItem('user', JSON.stringify(response.data.data));
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        // Show success message
+        console.log('Login successful:', response.data.message);
+        
+        // Navigate to home page
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setErrors({ general: 'Login failed. Please try again.' });
+      
+      // Handle different error scenarios
+      if (error.response) {
+        // Server responded with error status
+        const { status, data } = error.response;
+        
+        if (status === 401) {
+          setErrors({ general: 'Invalid email or password. Please try again.' });
+        } else if (status === 400) {
+          setErrors({ general: data.message || 'Please check your input and try again.' });
+        } else if (status >= 500) {
+          setErrors({ general: 'Server error. Please try again later.' });
+        } else {
+          setErrors({ general: data.message || 'Login failed. Please try again.' });
+        }
+      } else if (error.request) {
+        // Network error
+        setErrors({ general: 'Network error. Please check your connection and try again.' });
+      } else {
+        // Other error
+        setErrors({ general: 'An unexpected error occurred. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
